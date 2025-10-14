@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hall Ticket Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+<header class="app-header">
+  <div class="header-content">
+    <h1 class="app-title">Hall Ticket Generator</h1>
+  </div>
+</header>
+
+<div class="app-layout">
+  <!-- Left Sidebar -->
+  <aside class="sidebar sidebar-left">
+
+    <!-- Background Section -->
+    <div class="sidebar-section">
+      <h3 class="section-title">Background</h3>
+      <div class="section-content">
+        <label class="file-upload-label">
+          <span class="label-text">Upload Background (PDF/Image)</span>
+          <input type="file" id="bgUpload" accept=".pdf,.png,.jpg,.jpeg" />
+        </label>
+        <button onclick="selectBackground()" class="btn-secondary" title="Edit Background">
+          <span class="btn-icon">
+            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </span>
+          <span>Edit Background</span>
+        </button>
+        <button onclick="clearBackground()" class="btn-secondary" title="Clear Background">
+          <span class="btn-icon">
+            <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </span>
+          <span>Clear Background</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Data Section -->
+    <div class="sidebar-section">
+      <h3 class="section-title">Data</h3>
+      <div class="section-content">
+        <label class="file-upload-label">
+          <span class="label-text">Upload Data File</span>
+          <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" />
+        </label>
+        <select id="fieldSelector" aria-label="Field selector" disabled>
+          <option value="">Select field...</option>
+        </select>
+        <button onclick="addField()" class="btn-secondary" title="Add Field">
+          <span class="btn-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+          </span>
+          <span>Add Field</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Elements Section -->
+    <div class="sidebar-section">
+      <h3 class="section-title">Elements</h3>
+      <div class="section-content">
+        <button onclick="addText()" class="btn-secondary" title="Add Text">
+          <span class="btn-icon">
+            <svg viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+          </span>
+          <span>Text</span>
+        </button>
+        <button onclick="addPicture()" class="btn-secondary" title="Add Picture">
+          <span class="btn-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </span>
+          <span>Picture</span>
+        </button>
+        <button onclick="addRectangle()" class="btn-secondary" title="Add Rectangle">
+          <span class="btn-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          </span>
+          <span>Rectangle</span>
+        </button>
+        <button onclick="addLine()" class="btn-secondary" title="Add Line">
+          <span class="btn-icon">
+            <svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>
+          </span>
+          <span>Line</span>
+        </button>
+        <button onclick="addTable()" class="btn-secondary" title="Add Table">
+          <span class="btn-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M12 3v18"/></svg>
+          </span>
+          <span>Table</span>
+        </button>
+        <button onclick="deleteSelected()" class="btn-danger" title="Delete selected">
+          <span class="btn-icon">
+            <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          </span>
+          <span>Delete Element</span>
+        </button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Main Canvas Area -->
+  <main class="main-content">
+    <!-- Properties Panel Container - Fixed height to prevent canvas jumping -->
+    <div class="properties-panel-container">
+      <div id="propertiesPanel" class="properties-panel hidden">
+        <div class="properties-header">
+          <span id="propertiesTitle" class="properties-title">Properties</span>
+          <button class="btn-close-properties" onclick="closePropertiesPanel()">✕</button>
+        </div>
+        <div id="propertiesContent" class="properties-content">
+          <!-- Dynamic content will be inserted here -->
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-wrapper">
+      <div class="canvas-container" id="canvas">
+        <img id="bgImage" class="bg-image" />
+      </div>
+    </div>
+
+    <!-- Export Button Below Canvas -->
+    <div class="export-section">
+      <button onclick="generatePDFs()" class="btn-export" id="exportBtn" title="Generate PDFs">
+        <span class="btn-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        </span>
+        <span id="exportBtnText">Export All Hall Tickets</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- Export Progress Modal Overlay -->
+  <div id="exportProgressOverlay" class="progress-overlay" style="display:none;">
+    <div class="progress-modal">
+      <div class="progress-modal-content">
+        <div class="progress-icon">
+          <div class="spinner"></div>
+        </div>
+        <h3 class="progress-title">Generating Hall Tickets</h3>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text" id="progressText">Preparing...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Sidebar -->
+  <aside class="sidebar sidebar-right">
+
+    <!-- Page Size Panel -->
+    <div class="sidebar-panel">
+      <h3 class="panel-title">Page Size</h3>
+      <div class="panel-content">
+        <label class="input-label">
+          <span class="label-text">Page Format</span>
+          <select id="pageFormat" onchange="updatePageSize()">
+            <option value="default" selected>Default (Half A4)</option>
+            <option value="a4">A4 Portrait</option>
+            <option value="a4-landscape">A4 Landscape</option>
+            <option value="custom">Custom</option>
+          </select>
+        </label>
+        <label class="input-label">
+          <span class="label-text">Width (px)</span>
+          <input type="number" id="canvasWidth" min="100" max="3000" step="10" value="800" onchange="updateCanvasSize()" disabled />
+        </label>
+        <label class="input-label">
+          <span class="label-text">Height (px)</span>
+          <input type="number" id="canvasHeight" min="100" max="3000" step="10" value="560" onchange="updateCanvasSize()" disabled />
+        </label>
+      </div>
+    </div>
+
+    <!-- Grid & Snap Panel -->
+    <div class="sidebar-panel">
+      <h3 class="panel-title">Grid & Snap</h3>
+      <div class="panel-content">
+        <label class="checkbox-label">
+          <input type="checkbox" id="showGridToggle" onchange="toggleGrid()" checked />
+          <span>Show Grid</span>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="snapToGridToggle" onchange="toggleSnap()" checked />
+          <span>Snap to Grid</span>
+        </label>
+        <label class="input-label">
+          <span class="label-text">Grid Size (px)</span>
+          <input type="number" id="gridSize" min="5" max="100" step="5" value="20" onchange="updateGridSize()" />
+        </label>
+      </div>
+    </div>
+
+    <!-- Layout Panel -->
+    <div class="sidebar-panel">
+      <h3 class="panel-title">Layout</h3>
+      <div class="panel-content">
+        <button onclick="saveLayout()" class="btn-secondary" title="Save Layout">
+          <span class="btn-icon">
+            <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+          </span>
+          <span>Save Layout</span>
+        </button>
+        <label class="file-upload-label">
+          <span class="label-text">Load Layout</span>
+          <input type="file" id="layoutFile" accept=".json" />
+        </label>
+      </div>
+    </div>
+
+  </aside>
+
+</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="pictureUpload" accept="image/*" style="display:none;" />
+
+<script src="script.js"></script>
+</body>
+</html>
