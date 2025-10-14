@@ -4,6 +4,7 @@ const canvas = document.getElementById("canvas");
 const bgImage = document.getElementById("bgImage");
 let currentDrag = null, resizing = null, offsetX = 0, offsetY = 0;
 let selectedEl = null;
+let selectedElements = []; // Array to hold multiple selected elements
 let csvHeaders = []; // Store CSV headers for dynamic field population
 
 // Grid and snap settings
@@ -14,6 +15,12 @@ let gridSize = 5;
 // Mouse position tracking
 let mouseX = 0;
 let mouseY = 0;
+
+// Selection box state
+let selectionBox = null;
+let isSelecting = false;
+let selectionStartX = 0;
+let selectionStartY = 0;
 
 // Page size presets (in pixels - adjusted for grid alignment)
 // Using grid-friendly dimensions that are close to actual A4 sizes
@@ -350,7 +357,9 @@ function makeDraggable(el) {
 
     // Don't drag if element is locked
     if (el.classList.contains("locked")) {
-      selectElement(el);
+      // Support Ctrl/Cmd+click for multi-select even on locked elements
+      const isMultiSelect = e.ctrlKey || e.metaKey || e.shiftKey;
+      selectElement(el, isMultiSelect);
       return;
     }
 
@@ -360,13 +369,29 @@ function makeDraggable(el) {
       return;
     }
 
-    // Select on mouse down (even when starting a drag)
-    selectElement(el);
+    // Support Ctrl/Cmd+click for multi-select
+    const isMultiSelect = e.ctrlKey || e.metaKey || e.shiftKey;
+    selectElement(el, isMultiSelect);
+
     if (e.target.classList.contains("resize-handle")) return;
     if (el.isContentEditable && document.activeElement === el) return; // Don't drag while actively editing text
-    currentDrag = el;
-    offsetX = e.offsetX;
-    offsetY = e.offsetY;
+
+    // If multiple elements selected, prepare to drag all of them
+    if (selectedElements.length > 1) {
+      currentDrag = el;
+      offsetX = e.offsetX;
+      offsetY = e.offsetY;
+
+      // Store initial positions of all selected elements
+      selectedElements.forEach(elem => {
+        elem.dataset.dragStartLeft = elem.style.left;
+        elem.dataset.dragStartTop = elem.style.top;
+      });
+    } else {
+      currentDrag = el;
+      offsetX = e.offsetX;
+      offsetY = e.offsetY;
+    }
   });
 }
 
@@ -489,23 +514,72 @@ function updateZIndexes() {
 }
 
 // Selection helpers
-function selectElement(el){
-  if (selectedEl === el) return;
-  if (selectedEl) selectedEl.classList.remove('selected');
-  selectedEl = el || null;
-  if (selectedEl) selectedEl.classList.add('selected');
+function selectElement(el, addToSelection = false){
+  if (!addToSelection) {
+    // Single selection - clear previous
+    if (selectedEl) selectedEl.classList.remove('selected');
+    selectedElements.forEach(elem => elem.classList.remove('selected'));
+    selectedElements = [];
+    selectedEl = el || null;
+    if (selectedEl) {
+      selectedEl.classList.add('selected');
+      selectedElements = [selectedEl];
+    }
+  } else {
+    // Multi-selection - add to existing
+    if (el && !selectedElements.includes(el)) {
+      el.classList.add('selected');
+      selectedElements.push(el);
+      selectedEl = el; // Keep track of last selected
+    }
+  }
   updateToolbarState();
   updatePropertiesPanel();
 }
+
 function clearSelection(){
-  if (selectedEl){ selectedEl.classList.remove('selected'); selectedEl = null; }
+  if (selectedEl) selectedEl.classList.remove('selected');
+  selectedElements.forEach(elem => elem.classList.remove('selected'));
+  selectedEl = null;
+  selectedElements = [];
   updateToolbarState();
   closePropertiesPanel();
 }
 
-// Click on empty canvas/bg clears selection
+// Click on empty canvas/bg clears selection or starts selection box
 canvas.addEventListener('mousedown', e => {
-  if (e.target === canvas || e.target === bgImage) clearSelection();
+  if (e.target === canvas || e.target === bgImage) {
+    // Don't start selection if we're already dragging or resizing
+    if (currentDrag || resizing) return;
+
+    // Clear selection if not holding Shift
+    if (!e.shiftKey) {
+      clearSelection();
+    }
+
+    // Start selection box
+    const rect = canvas.getBoundingClientRect();
+    const computedStyle = window.getComputedStyle(canvas);
+    const borderLeft = parseFloat(computedStyle.borderLeftWidth) || 0;
+    const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
+
+    selectionStartX = e.clientX - rect.left - borderLeft;
+    selectionStartY = e.clientY - rect.top - borderTop;
+    isSelecting = true;
+
+    // Create selection box element
+    if (!selectionBox) {
+      selectionBox = document.createElement('div');
+      selectionBox.className = 'selection-box';
+      canvas.appendChild(selectionBox);
+    }
+
+    selectionBox.style.left = selectionStartX + 'px';
+    selectionBox.style.top = selectionStartY + 'px';
+    selectionBox.style.width = '0px';
+    selectionBox.style.height = '0px';
+    selectionBox.style.display = 'block';
+  }
 });
 
 // Keyboard shortcuts
@@ -561,38 +635,51 @@ document.addEventListener('keydown', e => {
   // Shortcuts that require selection
   if (!selectedEl) return;
 
-  // Arrow keys move selected element
+  // Arrow keys move selected element(s)
   if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
     e.preventDefault();
-
-    // Don't move if locked
-    if (selectedEl.classList.contains('locked')) return;
 
     // Determine move distance (hold Shift for larger steps)
     const moveDistance = e.shiftKey ? gridSize * 2 : gridSize;
 
-    const currentLeft = parseFloat(selectedEl.style.left) || 0;
-    const currentTop = parseFloat(selectedEl.style.top) || 0;
+    // Move all selected elements
+    const elementsToMove = selectedElements.length > 0 ? selectedElements : [selectedEl];
 
-    if (e.key === 'ArrowUp') {
-      selectedEl.style.top = snapValue(currentTop - moveDistance) + "px";
-    }
-    else if (e.key === 'ArrowDown') {
-      selectedEl.style.top = snapValue(currentTop + moveDistance) + "px";
-    }
-    else if (e.key === 'ArrowLeft') {
-      selectedEl.style.left = snapValue(currentLeft - moveDistance) + "px";
-    }
-    else if (e.key === 'ArrowRight') {
-      selectedEl.style.left = snapValue(currentLeft + moveDistance) + "px";
-    }
+    elementsToMove.forEach(elem => {
+      // Don't move if locked
+      if (elem.classList.contains('locked')) return;
+
+      const currentLeft = parseFloat(elem.style.left) || 0;
+      const currentTop = parseFloat(elem.style.top) || 0;
+
+      if (e.key === 'ArrowUp') {
+        elem.style.top = snapValue(currentTop - moveDistance) + "px";
+      }
+      else if (e.key === 'ArrowDown') {
+        elem.style.top = snapValue(currentTop + moveDistance) + "px";
+      }
+      else if (e.key === 'ArrowLeft') {
+        elem.style.left = snapValue(currentLeft - moveDistance) + "px";
+      }
+      else if (e.key === 'ArrowRight') {
+        elem.style.left = snapValue(currentLeft + moveDistance) + "px";
+      }
+    });
   }
-  // Delete / Backspace removes selected element
+  // Delete / Backspace removes selected element(s)
   else if (e.key === 'Delete' || e.key === 'Backspace'){
     e.preventDefault();
-    selectedEl.remove();
-    selectedEl = null;
+    // Delete all selected elements
+    if (selectedElements.length > 0) {
+      selectedElements.forEach(elem => elem.remove());
+      selectedElements = [];
+      selectedEl = null;
+    } else if (selectedEl) {
+      selectedEl.remove();
+      selectedEl = null;
+    }
     updateToolbarState();
+    closePropertiesPanel();
   }
   // Escape clears selection
   else if (e.key === 'Escape'){
@@ -610,7 +697,17 @@ document.addEventListener('keydown', e => {
 
 // Toolbar action for mouse users
 function deleteSelected(){
-  if (selectedEl){ selectedEl.remove(); selectedEl = null; }
+  // Delete all selected elements
+  if (selectedElements.length > 0) {
+    selectedElements.forEach(elem => elem.remove());
+    selectedElements = [];
+    selectedEl = null;
+  } else if (selectedEl) {
+    selectedEl.remove();
+    selectedEl = null;
+  }
+  updateToolbarState();
+  closePropertiesPanel();
 }
 
 // Snap to grid helper function
@@ -632,7 +729,7 @@ canvas.addEventListener("mousemove", e => {
   mouseY = e.clientY - rect.top - borderTop;
 });
 
-// Mouse move handler for dragging and resizing
+// Mouse move handler for dragging, resizing, and selection box
 document.addEventListener("mousemove", e => {
   if (currentDrag) {
     const rect = canvas.getBoundingClientRect();
@@ -644,8 +741,23 @@ document.addEventListener("mousemove", e => {
     let left = e.clientX - rect.left - offsetX - borderLeft;
     let top = e.clientY - rect.top - offsetY - borderTop;
 
-    currentDrag.style.left = left + "px";
-    currentDrag.style.top = top + "px";
+    // If multiple elements selected, move all of them
+    if (selectedElements.length > 1) {
+      const deltaX = left - parseFloat(currentDrag.style.left);
+      const deltaY = top - parseFloat(currentDrag.style.top);
+
+      selectedElements.forEach(elem => {
+        if (!elem.classList.contains('locked')) {
+          const currentLeft = parseFloat(elem.style.left) || 0;
+          const currentTop = parseFloat(elem.style.top) || 0;
+          elem.style.left = (currentLeft + deltaX) + "px";
+          elem.style.top = (currentTop + deltaY) + "px";
+        }
+      });
+    } else {
+      currentDrag.style.left = left + "px";
+      currentDrag.style.top = top + "px";
+    }
   } else if (resizing) {
     const dx = e.clientX - resizing.startX;
     const dy = e.clientY - resizing.startY;
@@ -669,10 +781,29 @@ document.addEventListener("mousemove", e => {
         tbl.style.height = "100%";
       }
     }
+  } else if (isSelecting && selectionBox) {
+    // Update selection box dimensions
+    const rect = canvas.getBoundingClientRect();
+    const computedStyle = window.getComputedStyle(canvas);
+    const borderLeft = parseFloat(computedStyle.borderLeftWidth) || 0;
+    const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
+
+    const currentX = e.clientX - rect.left - borderLeft;
+    const currentY = e.clientY - rect.top - borderTop;
+
+    const width = Math.abs(currentX - selectionStartX);
+    const height = Math.abs(currentY - selectionStartY);
+    const left = Math.min(currentX, selectionStartX);
+    const top = Math.min(currentY, selectionStartY);
+
+    selectionBox.style.left = left + 'px';
+    selectionBox.style.top = top + 'px';
+    selectionBox.style.width = width + 'px';
+    selectionBox.style.height = height + 'px';
   }
 });
 
-// Mouse up handler - apply snap here
+// Mouse up handler - apply snap here and complete selection
 document.addEventListener("mouseup", () => {
   // Apply snap to grid when releasing drag
   if (currentDrag && snapToGrid) {
@@ -697,6 +828,40 @@ document.addEventListener("mouseup", () => {
   // Update z-indexes after resize (size changed)
   if (resizing) {
     updateZIndexes();
+  }
+
+  // Complete selection box
+  if (isSelecting && selectionBox) {
+    const boxRect = selectionBox.getBoundingClientRect();
+
+    // Get all draggable elements
+    const elements = canvas.querySelectorAll('.field, .rect, .line, .table, .text, .picture');
+
+    // Clear previous selection if not holding Shift
+    if (!selectedElements.length) {
+      clearSelection();
+    }
+
+    // Check which elements intersect with selection box
+    elements.forEach(el => {
+      const elRect = el.getBoundingClientRect();
+
+      // Check if element intersects with selection box
+      const intersects = !(
+        elRect.right < boxRect.left ||
+        elRect.left > boxRect.right ||
+        elRect.bottom < boxRect.top ||
+        elRect.top > boxRect.bottom
+      );
+
+      if (intersects) {
+        selectElement(el, true); // Add to selection
+      }
+    });
+
+    // Hide and reset selection box
+    selectionBox.style.display = 'none';
+    isSelecting = false;
   }
 
   currentDrag = null;
@@ -801,6 +966,19 @@ function addText() {
 
   updateZIndexes();
   selectElement(textDiv);
+
+  // Automatically enable editing and select all text
+  setTimeout(() => {
+    textDiv.contentEditable = true;
+    textDiv.focus();
+    // Select all text
+    const range = document.createRange();
+    range.selectNodeContents(textDiv);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    updateToolbarState();
+  }, 0);
 }
 
 // Add picture function

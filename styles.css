@@ -1008,6 +1008,16 @@ input[type="file"]::file-selector-button{
   box-shadow:0 0 0 3px rgba(100, 116, 139, 0.15);
 }
 
+/* Selection box for drag selection */
+.selection-box{
+  position:absolute;
+  border:2px dashed var(--primary);
+  background:rgba(59, 130, 246, 0.1);
+  pointer-events:none;
+  z-index:9999;
+  display:none;
+}
+
 /* Lock button */
 .lock-btn{
   position:absolute;
