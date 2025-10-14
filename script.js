@@ -9,7 +9,11 @@ let csvHeaders = []; // Store CSV headers for dynamic field population
 // Grid and snap settings
 let showGrid = true;
 let snapToGrid = true;
-let gridSize = 20;
+let gridSize = 5;
+
+// Mouse position tracking
+let mouseX = 0;
+let mouseY = 0;
 
 // Page size presets (in pixels - adjusted for grid alignment)
 // Using grid-friendly dimensions that are close to actual A4 sizes
@@ -58,8 +62,8 @@ document.getElementById("pictureUpload").addEventListener("change", e => {
       const wrapper = document.createElement("div");
       wrapper.className = "picture";
       wrapper.dataset.type = "picture";
-      wrapper.style.left = "50px";
-      wrapper.style.top = "50px";
+      wrapper.style.left = snapValue(mouseX || 50) + "px";
+      wrapper.style.top = snapValue(mouseY || 50) + "px";
       wrapper.style.width = "200px";
       wrapper.style.height = "150px";
       wrapper.style.position = "absolute";
@@ -509,10 +513,82 @@ document.addEventListener('keydown', e => {
   const ae = document.activeElement;
   const isEditing = ae && (ae.isContentEditable || ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA');
   if (isEditing) return; // Let typing/editing handle keys normally
+
+  // Don't intercept browser shortcuts (Cmd/Ctrl + key)
+  if (e.metaKey || e.ctrlKey) return;
+
+  // Shortcuts for adding elements (work without selection)
+  // t = text, T = table, r = rectangle, p = picture
+  if (e.key === 't' && !e.shiftKey) {
+    e.preventDefault();
+    addText();
+    return;
+  }
+  else if (e.key === 'T' && e.shiftKey) {
+    e.preventDefault();
+    addTable();
+    return;
+  }
+  else if (e.key === 'r' || e.key === 'R') {
+    e.preventDefault();
+    addRectangle();
+    return;
+  }
+  else if (e.key === 'p' || e.key === 'P') {
+    e.preventDefault();
+    addPicture();
+    return;
+  }
+
+  // Handle 'l' key - context-dependent
+  // If element selected: Lock
+  // If no element selected: Add Line
+  if (e.key === 'l' || e.key === 'L') {
+    e.preventDefault();
+    if (selectedEl) {
+      // Lock the selected element
+      const lockBtn = selectedEl.querySelector('.lock-btn');
+      if (lockBtn && !selectedEl.classList.contains('locked')) {
+        toggleLock(selectedEl, lockBtn);
+      }
+    } else {
+      // Add line
+      addLine();
+    }
+    return;
+  }
+
+  // Shortcuts that require selection
   if (!selectedEl) return;
 
+  // Arrow keys move selected element
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    e.preventDefault();
+
+    // Don't move if locked
+    if (selectedEl.classList.contains('locked')) return;
+
+    // Determine move distance (hold Shift for larger steps)
+    const moveDistance = e.shiftKey ? gridSize * 2 : gridSize;
+
+    const currentLeft = parseFloat(selectedEl.style.left) || 0;
+    const currentTop = parseFloat(selectedEl.style.top) || 0;
+
+    if (e.key === 'ArrowUp') {
+      selectedEl.style.top = snapValue(currentTop - moveDistance) + "px";
+    }
+    else if (e.key === 'ArrowDown') {
+      selectedEl.style.top = snapValue(currentTop + moveDistance) + "px";
+    }
+    else if (e.key === 'ArrowLeft') {
+      selectedEl.style.left = snapValue(currentLeft - moveDistance) + "px";
+    }
+    else if (e.key === 'ArrowRight') {
+      selectedEl.style.left = snapValue(currentLeft + moveDistance) + "px";
+    }
+  }
   // Delete / Backspace removes selected element
-  if (e.key === 'Delete' || e.key === 'Backspace'){
+  else if (e.key === 'Delete' || e.key === 'Backspace'){
     e.preventDefault();
     selectedEl.remove();
     selectedEl = null;
@@ -521,14 +597,6 @@ document.addEventListener('keydown', e => {
   // Escape clears selection
   else if (e.key === 'Escape'){
     clearSelection();
-  }
-  // L locks the selected element
-  else if (e.key === 'l' || e.key === 'L'){
-    e.preventDefault();
-    const lockBtn = selectedEl.querySelector('.lock-btn');
-    if (lockBtn && !selectedEl.classList.contains('locked')) {
-      toggleLock(selectedEl, lockBtn);
-    }
   }
   // U unlocks the selected element
   else if (e.key === 'u' || e.key === 'U'){
@@ -553,6 +621,17 @@ function snapValue(value) {
   return Math.round(numValue / gridSize) * gridSize;
 }
 
+// Track mouse position over canvas
+canvas.addEventListener("mousemove", e => {
+  const rect = canvas.getBoundingClientRect();
+  const computedStyle = window.getComputedStyle(canvas);
+  const borderLeft = parseFloat(computedStyle.borderLeftWidth) || 0;
+  const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
+
+  mouseX = e.clientX - rect.left - borderLeft;
+  mouseY = e.clientY - rect.top - borderTop;
+});
+
 // Mouse move handler for dragging and resizing
 document.addEventListener("mousemove", e => {
   if (currentDrag) {
@@ -570,17 +649,25 @@ document.addEventListener("mousemove", e => {
   } else if (resizing) {
     const dx = e.clientX - resizing.startX;
     const dy = e.clientY - resizing.startY;
-    let newW = Math.max(20, resizing.startW + dx);
-    let newH = Math.max(10, resizing.startH + dy);
 
-    resizing.el.style.width = newW + "px";
-    resizing.el.style.height = newH + "px";
+    // For line elements, only change width (length), keep height (thickness) fixed
+    if (resizing.el.classList.contains("line")) {
+      let newW = Math.max(20, resizing.startW + dx);
+      resizing.el.style.width = newW + "px";
+      // Don't change height for lines
+    } else {
+      let newW = Math.max(20, resizing.startW + dx);
+      let newH = Math.max(10, resizing.startH + dy);
 
-    // Sync table inner size
-    if (resizing.el.classList.contains("table")) {
-      const tbl = resizing.el.querySelector("table");
-      tbl.style.width = "100%";
-      tbl.style.height = "100%";
+      resizing.el.style.width = newW + "px";
+      resizing.el.style.height = newH + "px";
+
+      // Sync table inner size
+      if (resizing.el.classList.contains("table")) {
+        const tbl = resizing.el.querySelector("table");
+        tbl.style.width = "100%";
+        tbl.style.height = "100%";
+      }
     }
   }
 });
@@ -598,9 +685,13 @@ document.addEventListener("mouseup", () => {
   // Apply snap to grid when releasing resize
   if (resizing && snapToGrid) {
     const currentWidth = parseFloat(resizing.el.style.width) || 0;
-    const currentHeight = parseFloat(resizing.el.style.height) || 0;
     resizing.el.style.width = snapValue(currentWidth) + "px";
-    resizing.el.style.height = snapValue(currentHeight) + "px";
+
+    // Only snap height for non-line elements
+    if (!resizing.el.classList.contains("line")) {
+      const currentHeight = parseFloat(resizing.el.style.height) || 0;
+      resizing.el.style.height = snapValue(currentHeight) + "px";
+    }
   }
 
   // Update z-indexes after resize (size changed)
@@ -620,11 +711,21 @@ function addField() {
   div.dataset.type = "field";
   div.dataset.field = field;
   div.textContent = `{{${field}}}`;
-  div.style.left = "50px";
-  div.style.top = "50px";
   makeDraggable(div);
   addLockButton(div);
+
+  // Temporarily position off-screen to measure
+  div.style.left = "-9999px";
+  div.style.top = "-9999px";
   canvas.appendChild(div);
+
+  // Get height to center vertically
+  const height = div.offsetHeight;
+
+  // Position with left-center at mouse position
+  div.style.left = snapValue(mouseX || 50) + "px";
+  div.style.top = snapValue((mouseY || 50) - height / 2) + "px";
+
   updateZIndexes();
   selectElement(div);
 }
@@ -634,8 +735,8 @@ function addRectangle() {
   const rect = document.createElement("div");
   rect.className = "rect";
   rect.dataset.type = "rect";
-  rect.style.left = "0px";
-  rect.style.top = "0px";
+  rect.style.left = snapValue(mouseX || 50) + "px";
+  rect.style.top = snapValue(mouseY || 50) + "px";
   rect.style.width = "120px";
   rect.style.height = "60px";
   makeDraggable(rect);
@@ -651,8 +752,8 @@ function addLine() {
   const line = document.createElement("div");
   line.className = "line";
   line.dataset.type = "line";
-  line.style.left = "100px";
-  line.style.top = "200px";
+  line.style.left = snapValue(mouseX || 100) + "px";
+  line.style.top = snapValue(mouseY || 200) + "px";
   makeDraggable(line);
   makeResizable(line);
   addLockButton(line);
@@ -663,15 +764,10 @@ function addLine() {
 
 // Add text function
 function addText() {
-  const text = prompt("Enter text:", "Sample Text");
-  if (!text) return;
-
   const textDiv = document.createElement("div");
   textDiv.className = "text";
   textDiv.dataset.type = "text";
-  textDiv.textContent = text;
-  textDiv.style.left = "0px";
-  textDiv.style.top = "0px";
+  textDiv.textContent = "Sample Text";
   textDiv.contentEditable = false; // Default not editing; double-click to edit
 
   // Enable editing on double-click
@@ -690,7 +786,19 @@ function addText() {
 
   makeDraggable(textDiv);
   addLockButton(textDiv);
+
+  // Temporarily position off-screen to measure
+  textDiv.style.left = "-9999px";
+  textDiv.style.top = "-9999px";
   canvas.appendChild(textDiv);
+
+  // Get height to center vertically
+  const height = textDiv.offsetHeight;
+
+  // Position with left-center at mouse position
+  textDiv.style.left = snapValue(mouseX || 50) + "px";
+  textDiv.style.top = snapValue((mouseY || 50) - height / 2) + "px";
+
   updateZIndexes();
   selectElement(textDiv);
 }
@@ -702,15 +810,14 @@ function addPicture() {
 
 // Add table function
 function addTable() {
-  const rows = parseInt(prompt("Number of rows:", "3"));
-  const cols = parseInt(prompt("Number of columns:", "4"));
-  if (!rows || !cols) return;
+  const rows = 3;  // Default 3 rows
+  const cols = 4;  // Default 4 columns
 
   const wrapper = document.createElement("div");
   wrapper.className = "table";
   wrapper.dataset.type = "table";
-  wrapper.style.left = "100px";
-  wrapper.style.top = "250px";
+  wrapper.style.left = snapValue(mouseX || 100) + "px";
+  wrapper.style.top = snapValue(mouseY || 250) + "px";
   wrapper.style.width = "400px";
   wrapper.style.height = "200px";
 
@@ -987,6 +1094,144 @@ function loadLayout() {
   reader.readAsText(input.files[0]);
 }
 
+// Preview functionality
+let previewData = [];
+let currentPreviewIndex = 0;
+
+function showPreview() {
+  const dataFile = document.getElementById("csvFile");
+  if (!dataFile.files.length) {
+    alert("Please select a data file (CSV or Excel) first");
+    return;
+  }
+
+  const file = dataFile.files[0];
+  const fileExtension = file.name.split('.').pop().toLowerCase();
+
+  if (fileExtension === 'csv') {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        previewData = results.data;
+        if (previewData.length === 0) {
+          alert("No data found in CSV file");
+          return;
+        }
+        currentPreviewIndex = 0;
+        openPreviewModal();
+      },
+      error: function(error) {
+        alert('Error reading CSV file: ' + error.message);
+      }
+    });
+  } else if (['xlsx', 'xls'].includes(fileExtension)) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+        previewData = jsonData;
+        if (previewData.length === 0) {
+          alert("No data found in Excel file");
+          return;
+        }
+        currentPreviewIndex = 0;
+        openPreviewModal();
+      } catch (error) {
+        alert('Error reading Excel file: ' + error.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+function openPreviewModal() {
+  const overlay = document.getElementById('previewOverlay');
+  const totalRecords = document.getElementById('totalRecords');
+
+  totalRecords.textContent = previewData.length;
+  overlay.style.display = 'flex';
+
+  renderPreview();
+}
+
+function closePreview() {
+  const overlay = document.getElementById('previewOverlay');
+  overlay.style.display = 'none';
+
+  // Clear preview
+  const previewCanvas = document.getElementById('previewCanvas');
+  previewCanvas.innerHTML = '';
+}
+
+function renderPreview() {
+  if (previewData.length === 0) return;
+
+  const row = previewData[currentPreviewIndex];
+  const previewCanvas = document.getElementById('previewCanvas');
+  const currentRecord = document.getElementById('currentRecord');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  // Update counter
+  currentRecord.textContent = currentPreviewIndex + 1;
+
+  // Update button states
+  prevBtn.disabled = currentPreviewIndex === 0;
+  nextBtn.disabled = currentPreviewIndex === previewData.length - 1;
+
+  // Clone canvas and populate with data
+  const clone = canvas.cloneNode(true);
+
+  // Remove interactive elements
+  clone.classList.remove("show-grid");
+  clone.querySelectorAll(".resize-handle").forEach(h => h.remove());
+  clone.querySelectorAll(".table-col-resize-handle, .table-row-resize-handle").forEach(h => h.remove());
+  clone.querySelectorAll(".lock-btn").forEach(h => h.remove());
+  clone.querySelectorAll(".selected").forEach(n => n.classList.remove("selected"));
+
+  // Populate fields with data
+  clone.querySelectorAll(".field").forEach(f => {
+    const val = row[f.dataset.field] || "";
+    f.textContent = val;
+    f.style.border = "none";
+    f.style.background = "transparent";
+  });
+
+  clone.querySelectorAll(".text").forEach(t => {
+    t.style.border = "none";
+    t.style.background = "transparent";
+    t.contentEditable = false;
+  });
+
+  clone.querySelectorAll(".picture").forEach(p => {
+    p.style.border = "none";
+    p.style.background = "transparent";
+  });
+
+  // Clear and add to preview
+  previewCanvas.innerHTML = '';
+  previewCanvas.appendChild(clone);
+}
+
+function previousRecord() {
+  if (currentPreviewIndex > 0) {
+    currentPreviewIndex--;
+    renderPreview();
+  }
+}
+
+function nextRecord() {
+  if (currentPreviewIndex < previewData.length - 1) {
+    currentPreviewIndex++;
+    renderPreview();
+  }
+}
+
 // Generate PDFs function
 async function generatePDFs() {
   const dataFile = document.getElementById("csvFile");
@@ -1138,6 +1383,15 @@ async function generatePDFs() {
       a.download = 'hall_tickets.zip';
       a.click();
       URL.revokeObjectURL(a.href);
+
+      // Track PDF generation in Google Analytics
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'pdf_generated', {
+          'event_category': 'engagement',
+          'event_label': 'hall_tickets',
+          'value': totalCount
+        });
+      }
 
       // Success
       requestAnimationFrame(() => {

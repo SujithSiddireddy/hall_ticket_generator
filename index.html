@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Hall Ticket Generator</title>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-WPB19CMYHW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-WPB19CMYHW');
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -137,6 +147,12 @@
 
     <!-- Export Button Below Canvas -->
     <div class="export-section">
+      <button onclick="showPreview()" class="btn-preview" id="previewBtn" title="Preview Hall Tickets">
+        <span class="btn-icon">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </span>
+        <span>Preview</span>
+      </button>
       <button onclick="generatePDFs()" class="btn-export" id="exportBtn" title="Generate PDFs">
         <span class="btn-icon">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
@@ -145,6 +161,34 @@
       </button>
     </div>
   </main>
+
+  <!-- Preview Modal Overlay -->
+  <div id="previewOverlay" class="preview-overlay" style="display:none;">
+    <div class="preview-modal">
+      <div class="preview-header">
+        <h3 class="preview-title">Hall Ticket Preview</h3>
+        <button onclick="closePreview()" class="btn-close-preview" title="Close Preview">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="preview-content">
+        <div id="previewCanvas" class="preview-canvas-container"></div>
+      </div>
+      <div class="preview-footer">
+        <button onclick="previousRecord()" class="btn-nav" id="prevBtn" title="Previous Record">
+          <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+          <span>Previous</span>
+        </button>
+        <div class="preview-counter">
+          <span id="currentRecord">1</span> / <span id="totalRecords">0</span>
+        </div>
+        <button onclick="nextRecord()" class="btn-nav" id="nextBtn" title="Next Record">
+          <span>Next</span>
+          <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Export Progress Modal Overlay -->
   <div id="exportProgressOverlay" class="progress-overlay" style="display:none;">
@@ -203,7 +247,7 @@
         </label>
         <label class="input-label">
           <span class="label-text">Grid Size (px)</span>
-          <input type="number" id="gridSize" min="5" max="100" step="5" value="20" onchange="updateGridSize()" />
+          <input type="number" id="gridSize" min="5" max="100" step="5" value="5" onchange="updateGridSize()" />
         </label>
       </div>
     </div>
@@ -228,6 +272,11 @@
   </aside>
 
 </div>
+
+<!-- Footer -->
+<footer class="app-footer">
+  <p>© 2025 Sujith Siddireddy | <a href="mailto:sujith.siddireddy@gmail.com">sujith.siddireddy@gmail.com</a> | Free to use for educational and commercial purposes</p>
+</footer>
 
 <!-- Hidden file inputs -->
 <input type="file" id="pictureUpload" accept="image/*" style="display:none;" />
