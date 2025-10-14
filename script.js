@@ -1062,11 +1062,11 @@ async function generatePDFs() {
           p.style.background = "transparent"; // Remove background in PDF
         });
 
-        // Hide clone from view
+        // Hide clone from view (position off-screen but keep visible for html2canvas)
         clone.style.position = 'absolute';
         clone.style.left = '-9999px';
         clone.style.top = '-9999px';
-        clone.style.visibility = 'hidden';
+        clone.style.zIndex = '-1';
 
         document.body.appendChild(clone);
 
