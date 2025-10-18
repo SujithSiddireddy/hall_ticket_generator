@@ -14,6 +14,10 @@
   gtag('config', 'G-WPB19CMYHW');
 </script>
 
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
+     crossorigin="anonymous"></script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -26,38 +30,74 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
+<!-- Mobile Warning Overlay -->
+<div id="mobileWarning" class="mobile-warning-overlay">
+  <div class="mobile-warning-content">
+    <div class="mobile-warning-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+        <path d="M2 17l10 5 10-5"/>
+        <path d="M2 12l10 5 10-5"/>
+      </svg>
+    </div>
+    <h2 class="mobile-warning-title">Desktop Experience Required</h2>
+    <p class="mobile-warning-message">
+      This Hall Ticket Generator is designed for larger screens and desktop browsers for the best experience.
+    </p>
+    <p class="mobile-warning-submessage">
+      Please access this application from a desktop or laptop computer with a screen width of at least 1024px.
+    </p>
+    <button onclick="dismissMobileWarning()" class="mobile-warning-dismiss">
+      Continue Anyway
+    </button>
+  </div>
+</div>
+
 <header class="app-header">
   <div class="header-content">
-    <h1 class="app-title">Hall Ticket Generator</h1>
+    <div class="header-left">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="6" width="20" height="12" rx="2"/>
+          <path d="M2 10h20"/>
+          <circle cx="7" cy="14" r="1" fill="currentColor"/>
+          <circle cx="12" cy="14" r="1" fill="currentColor"/>
+          <circle cx="17" cy="14" r="1" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="header-title-group">
+        <h1 class="app-title">Hall Ticket Generator</h1>
+        <p class="app-subtitle">Design and export hall tickets with ease</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <button onclick="showKeyboardShortcuts()" class="header-btn" data-tooltip="Keyboard Shortcuts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M8 16h8"/>
+        </svg>
+      </button>
+      <button onclick="showHelp()" class="header-btn" data-tooltip="Help">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </button>
+      <a href="about.html" class="header-btn header-link" data-tooltip="About">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      </a>
+    </div>
   </div>
 </header>
 
 <div class="app-layout">
   <!-- Left Sidebar -->
   <aside class="sidebar sidebar-left">
-
-    <!-- Background Section -->
-    <div class="sidebar-section">
-      <h3 class="section-title">Background</h3>
-      <div class="section-content">
-        <label class="file-upload-label">
-          <span class="label-text">Upload Background (PDF/Image)</span>
-          <input type="file" id="bgUpload" accept=".pdf,.png,.jpg,.jpeg" />
-        </label>
-        <button onclick="selectBackground()" class="btn-secondary" title="Edit Background">
-          <span class="btn-icon">
-            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </span>
-          <span>Edit Background</span>
-        </button>
-        <button onclick="clearBackground()" class="btn-secondary" title="Clear Background">
-          <span class="btn-icon">
-            <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </span>
-          <span>Clear Background</span>
-        </button>
-      </div>
-    </div>
 
     <!-- Data Section -->
     <div class="sidebar-section">
@@ -83,43 +123,83 @@
     <div class="sidebar-section">
       <h3 class="section-title">Elements</h3>
       <div class="section-content">
-        <button onclick="addText()" class="btn-secondary" title="Add Text">
+        <!-- Hidden file input for background upload -->
+        <input type="file" id="bgUpload" accept=".pdf,.png,.jpg,.jpeg" style="display: none;" />
+
+        <button id="backgroundBtn" onclick="handleBackgroundButton()" class="btn-secondary" title="Upload or Edit Background">
+          <span class="btn-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 3l18 18"/></svg>
+          </span>
+          <span id="backgroundBtnText">Background</span>
+        </button>
+        <button onclick="addText()" class="btn-secondary" title="Add Text (Shortcut: T)">
           <span class="btn-icon">
             <svg viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
           </span>
-          <span>Text</span>
+          <span class="btn-text-with-shortcut">
+            <span>Text</span>
+            <span class="btn-shortcut">T</span>
+          </span>
         </button>
-        <button onclick="addPicture()" class="btn-secondary" title="Add Picture">
+        <button onclick="addPicture()" class="btn-secondary" title="Add Picture (Shortcut: P)">
           <span class="btn-icon">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
           </span>
-          <span>Picture</span>
+          <span class="btn-text-with-shortcut">
+            <span>Picture</span>
+            <span class="btn-shortcut">P</span>
+          </span>
         </button>
-        <button onclick="addRectangle()" class="btn-secondary" title="Add Rectangle">
+        <button onclick="addRectangle()" class="btn-secondary" title="Add Rectangle (Shortcut: R)">
           <span class="btn-icon">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
           </span>
-          <span>Rectangle</span>
+          <span class="btn-text-with-shortcut">
+            <span>Rectangle</span>
+            <span class="btn-shortcut">R</span>
+          </span>
         </button>
-        <button onclick="addLine()" class="btn-secondary" title="Add Line">
+        <button onclick="addLine()" class="btn-secondary" title="Add Line (Shortcut: L)">
           <span class="btn-icon">
             <svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>
           </span>
-          <span>Line</span>
+          <span class="btn-text-with-shortcut">
+            <span>Line</span>
+            <span class="btn-shortcut">L</span>
+          </span>
         </button>
-        <button onclick="addTable()" class="btn-secondary" title="Add Table">
+        <button onclick="addTable()" class="btn-secondary" title="Add Table (Shortcut: Shift+T)">
           <span class="btn-icon">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M12 3v18"/></svg>
           </span>
-          <span>Table</span>
+          <span class="btn-text-with-shortcut">
+            <span>Table</span>
+            <span class="btn-shortcut">⇧T</span>
+          </span>
         </button>
-        <button onclick="deleteSelected()" class="btn-danger" title="Delete selected">
+        <button onclick="deleteSelected()" class="btn-danger" title="Delete selected (Shortcut: Del/Backspace)">
           <span class="btn-icon">
             <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
           </span>
-          <span>Delete Element</span>
+          <span class="btn-text-with-shortcut">
+            <span>Delete Element</span>
+            <span class="btn-shortcut">Del</span>
+          </span>
         </button>
       </div>
+    </div>
+
+    <!-- Advertisement -->
+    <div class="sidebar-section ad-section">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+           data-ad-slot="ZZZZZZZZZZ"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>
+           (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
     </div>
 
   </aside>
@@ -142,6 +222,14 @@
     <div class="canvas-wrapper">
       <div class="canvas-container" id="canvas">
         <img id="bgImage" class="bg-image" />
+      </div>
+
+      <!-- Floating Zoom Controls (Figma Style) -->
+      <div class="zoom-controls-floating">
+        <button onclick="zoomOut()" class="zoom-btn-floating" title="Zoom Out (Ctrl/Cmd + Scroll)">−</button>
+        <span class="zoom-level-floating" id="zoomLevelPanel">100%</span>
+        <button onclick="zoomIn()" class="zoom-btn-floating" title="Zoom In (Ctrl/Cmd + Scroll)">+</button>
+        <button onclick="resetZoom()" class="zoom-btn-floating zoom-reset" title="Zoom to Fit">⟲</button>
       </div>
     </div>
 
@@ -213,8 +301,8 @@
     <div class="sidebar-panel">
       <h3 class="panel-title">Page Size</h3>
       <div class="panel-content">
-        <label class="input-label">
-          <span class="label-text">Page Format</span>
+        <label class="input-label-inline">
+          <span class="label-text">Format</span>
           <select id="pageFormat" onchange="updatePageSize()">
             <option value="default" selected>Default (Half A4)</option>
             <option value="a4">A4 Portrait</option>
@@ -222,32 +310,46 @@
             <option value="custom">Custom</option>
           </select>
         </label>
-        <label class="input-label">
-          <span class="label-text">Width (px)</span>
-          <input type="number" id="canvasWidth" min="100" max="3000" step="10" value="800" onchange="updateCanvasSize()" disabled />
-        </label>
-        <label class="input-label">
-          <span class="label-text">Height (px)</span>
-          <input type="number" id="canvasHeight" min="100" max="3000" step="10" value="560" onchange="updateCanvasSize()" disabled />
-        </label>
+        <div class="input-row">
+          <label class="input-label-inline">
+            <span class="label-text">W</span>
+            <div class="input-with-suffix">
+              <input type="number" id="canvasWidth" min="100" max="3000" step="10" value="800" onchange="updateCanvasSize()" disabled />
+              <span class="input-suffix">px</span>
+            </div>
+          </label>
+          <label class="input-label-inline">
+            <span class="label-text">H</span>
+            <div class="input-with-suffix">
+              <input type="number" id="canvasHeight" min="100" max="3000" step="10" value="560" onchange="updateCanvasSize()" disabled />
+              <span class="input-suffix">px</span>
+            </div>
+          </label>
+        </div>
       </div>
     </div>
 
     <!-- Grid & Snap Panel -->
     <div class="sidebar-panel">
-      <h3 class="panel-title">Grid & Snap</h3>
+      <h3 class="panel-title">Grid</h3>
       <div class="panel-content">
-        <label class="checkbox-label">
-          <input type="checkbox" id="showGridToggle" onchange="toggleGrid()" checked />
-          <span>Show Grid</span>
+        <label class="toggle-label">
+          <span class="toggle-text">Show Grid</span>
+          <div class="toggle-switch">
+            <input type="checkbox" id="showGridToggle" onchange="toggleGrid()" checked />
+            <span class="toggle-slider"></span>
+          </div>
         </label>
-        <label class="checkbox-label">
-          <input type="checkbox" id="snapToGridToggle" onchange="toggleSnap()" checked />
-          <span>Snap to Grid</span>
+        <label class="toggle-label">
+          <span class="toggle-text">Snap to Grid</span>
+          <div class="toggle-switch">
+            <input type="checkbox" id="snapToGridToggle" onchange="toggleSnap()" checked />
+            <span class="toggle-slider"></span>
+          </div>
         </label>
-        <label class="input-label">
-          <span class="label-text">Grid Size (px)</span>
-          <input type="number" id="gridSize" min="5" max="100" step="5" value="5" onchange="updateGridSize()" />
+        <label class="input-label-inline">
+          <span class="label-text">Grid Size</span>
+          <input type="number" class="property-input small" id="gridSize" min="1" max="100" step="1" value="5" onchange="updateGridSize()" />
         </label>
       </div>
     </div>
@@ -269,18 +371,207 @@
       </div>
     </div>
 
+    <!-- Advertisement -->
+    <div class="sidebar-panel ad-panel">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+           data-ad-slot="YYYYYYYYYY"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>
+           (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </div>
+
   </aside>
 
 </div>
 
 <!-- Footer -->
 <footer class="app-footer">
-  <p>© 2025 Sujith Siddireddy | <a href="mailto:sujith.siddireddy@gmail.com">sujith.siddireddy@gmail.com</a> | Free to use for educational and commercial purposes</p>
+  <p>
+    © 2025 Sujith Siddireddy |
+    <a href="mailto:sujith.siddireddy@gmail.com">sujith.siddireddy@gmail.com</a> |
+    <a href="about.html">About</a> |
+    <a href="privacy.html">Privacy Policy</a> |
+    <a href="contact.html">Contact</a> |
+    Free to use for educational and commercial purposes
+  </p>
 </footer>
 
 <!-- Hidden file inputs -->
 <input type="file" id="pictureUpload" accept="image/*" style="display:none;" />
 
-<script src="script.js"></script>
+<!-- Keyboard Shortcuts Modal -->
+<div id="shortcutsOverlay" class="modal-overlay" style="display:none;">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3 class="modal-title">Keyboard Shortcuts</h3>
+      <button onclick="closeKeyboardShortcuts()" class="btn-close-modal" title="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="shortcuts-section">
+        <h4 class="shortcuts-category">Add Elements</h4>
+        <div class="shortcuts-grid">
+          <div class="shortcut-item">
+            <span class="shortcut-key">T</span>
+            <span class="shortcut-desc">Add Text</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key">P</span>
+            <span class="shortcut-desc">Add Picture</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key">R</span>
+            <span class="shortcut-desc">Add Rectangle</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key">L</span>
+            <span class="shortcut-desc">Add Line (no selection)</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key">Shift + T</span>
+            <span class="shortcut-desc">Add Table</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="shortcuts-section">
+        <h4 class="shortcuts-category">Element Actions</h4>
+        <div class="shortcuts-grid">
+          <div class="shortcut-item">
+            <span class="shortcut-key">L</span>
+            <span class="shortcut-desc">Lock Selected Element</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key">U</span>
+            <span class="shortcut-desc">Unlock Selected Element</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key">Del / Backspace</span>
+            <span class="shortcut-desc">Delete Selected</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key">Esc</span>
+            <span class="shortcut-desc">Clear Selection</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="shortcuts-section">
+        <h4 class="shortcuts-category">Move Elements</h4>
+        <div class="shortcuts-grid">
+          <div class="shortcut-item">
+            <span class="shortcut-key">Arrow Keys</span>
+            <span class="shortcut-desc">Move Selected Element</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key">Shift + Arrow</span>
+            <span class="shortcut-desc">Move Faster (2x grid)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="shortcuts-section">
+        <h4 class="shortcuts-category">Canvas Navigation</h4>
+        <div class="shortcuts-grid">
+          <div class="shortcut-item">
+            <span class="shortcut-key">Ctrl/Cmd + Scroll</span>
+            <span class="shortcut-desc">Zoom In/Out</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key">Scroll (Trackpad)</span>
+            <span class="shortcut-desc">Pan Canvas</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key">Shift + Drag</span>
+            <span class="shortcut-desc">Pan Canvas (Mouse)</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key">Middle Click + Drag</span>
+            <span class="shortcut-desc">Pan Canvas</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Help Modal -->
+<div id="helpOverlay" class="modal-overlay" style="display:none;">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3 class="modal-title">How to Use Hall Ticket Generator</h3>
+      <button onclick="closeHelp()" class="btn-close-modal" title="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="help-content">
+        <div class="help-step">
+          <div class="help-step-number">1</div>
+          <div class="help-step-content">
+            <h4>Upload Your Data</h4>
+            <p>Upload a CSV or Excel file containing student information (names, roll numbers, etc.)</p>
+          </div>
+        </div>
+        <div class="help-step">
+          <div class="help-step-number">2</div>
+          <div class="help-step-content">
+            <h4>Design Your Template</h4>
+            <p>Add elements like text, pictures, tables, and shapes. Use the field selector to insert dynamic data from your uploaded file.</p>
+          </div>
+        </div>
+        <div class="help-step">
+          <div class="help-step-number">3</div>
+          <div class="help-step-content">
+            <h4>Customize Layout</h4>
+            <p>Adjust page size, enable grid snapping, and position elements precisely. Save your layout for future use.</p>
+          </div>
+        </div>
+        <div class="help-step">
+          <div class="help-step-number">4</div>
+          <div class="help-step-content">
+            <h4>Preview & Export</h4>
+            <p>Click Preview to see how your hall tickets will look, then Export to generate PDFs for all records.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Core modules - Part 1: Base utilities and state -->
+<script src="scripts/core/state.js"></script>
+<script src="scripts/core/utils.js"></script>
+<script src="scripts/core/page-size.js"></script>
+<script src="scripts/core/grid.js"></script>
+<script src="scripts/core/selection.js"></script>
+
+<!-- Desktop-specific modules - Part 1: Interactions (needed by elements.js) -->
+<script src="scripts/desktop/interactions.js"></script>
+<script src="scripts/desktop/ui.js"></script>
+
+<!-- Core modules - Part 2: Modules that depend on interactions -->
+<script src="scripts/core/csv-handler.js"></script>
+<script src="scripts/core/background.js"></script>
+<script src="scripts/core/elements.js"></script>
+<script src="scripts/core/element-properties.js"></script>
+<script src="scripts/core/layout.js"></script>
+<script src="scripts/core/export.js"></script>
+
+<!-- Desktop-specific modules - Part 2: Remaining modules -->
+<script src="scripts/desktop/picture-upload.js"></script>
+<script src="scripts/desktop/preview.js"></script>
+<script src="scripts/desktop/keyboard.js"></script>
+<script src="scripts/desktop/zoom.js"></script>
+<script src="scripts/desktop/init.js"></script>
 </body>
 </html>
