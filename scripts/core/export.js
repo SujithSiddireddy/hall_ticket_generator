@@ -113,7 +113,13 @@ async function generatePDFs() {
         pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight, undefined, 'FAST');
 
         const pdfBlob = pdf.output('blob');
-        const fileName = `${row.hall_ticket_number || `ticket_${index + 1}`}.pdf`;
+
+        // Get the selected filename field from the dropdown
+        const filenameField = document.getElementById("filenameFieldSelector")?.value || "hall_ticket_number";
+        let fileNameValue = row[filenameField] || `ticket_${index + 1}`;
+        // Replace spaces with underscores
+        fileNameValue = fileNameValue.toString().replace(/\s+/g, '_');
+        const fileName = `${fileNameValue}.pdf`;
 
         return { fileName, pdfBlob };
       }

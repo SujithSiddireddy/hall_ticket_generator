@@ -58,7 +58,7 @@ function handleCSVUpload(e) {
 function populateFieldSelector() {
   const selector = document.getElementById("fieldSelector");
   if (!selector) return;
-  
+
   selector.innerHTML = ""; // Clear existing options
 
   if (csvHeaders.length === 0) {
@@ -75,6 +75,32 @@ function populateFieldSelector() {
       option.textContent = header;
       selector.appendChild(option);
     });
+  }
+
+  // Also populate filename field selector
+  const filenameSelector = document.getElementById("filenameFieldSelector");
+  if (filenameSelector) {
+    filenameSelector.innerHTML = "";
+
+    if (csvHeaders.length === 0) {
+      const option = document.createElement("option");
+      option.value = "";
+      option.textContent = "Upload data file first";
+      filenameSelector.appendChild(option);
+      filenameSelector.disabled = true;
+    } else {
+      filenameSelector.disabled = false;
+      csvHeaders.forEach(header => {
+        const option = document.createElement("option");
+        option.value = header;
+        option.textContent = header;
+        // Pre-select hall_ticket_number if it exists
+        if (header === 'hall_ticket_number') {
+          option.selected = true;
+        }
+        filenameSelector.appendChild(option);
+      });
+    }
   }
 }
 

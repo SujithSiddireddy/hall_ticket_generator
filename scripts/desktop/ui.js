@@ -255,6 +255,15 @@ function closeHelp() {
   document.getElementById('helpOverlay').style.display = 'none';
 }
 
+// Export Settings Modal Functions
+function showExportSettings() {
+  document.getElementById('exportSettingsOverlay').style.display = 'flex';
+}
+
+function closeExportSettings() {
+  document.getElementById('exportSettingsOverlay').style.display = 'none';
+}
+
 // Close modals when clicking outside
 document.addEventListener('click', function(e) {
   if (e.target.classList.contains('modal-overlay')) {
@@ -262,6 +271,8 @@ document.addEventListener('click', function(e) {
       closeKeyboardShortcuts();
     } else if (e.target.id === 'helpOverlay') {
       closeHelp();
+    } else if (e.target.id === 'exportSettingsOverlay') {
+      closeExportSettings();
     }
   }
 });
@@ -271,11 +282,14 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     const shortcutsOverlay = document.getElementById('shortcutsOverlay');
     const helpOverlay = document.getElementById('helpOverlay');
+    const exportSettingsOverlay = document.getElementById('exportSettingsOverlay');
 
     if (shortcutsOverlay && shortcutsOverlay.style.display === 'flex') {
       closeKeyboardShortcuts();
     } else if (helpOverlay && helpOverlay.style.display === 'flex') {
       closeHelp();
+    } else if (exportSettingsOverlay && exportSettingsOverlay.style.display === 'flex') {
+      closeExportSettings();
     }
   }
 });
