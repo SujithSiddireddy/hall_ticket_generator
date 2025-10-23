@@ -119,6 +119,34 @@ function renderPreview() {
   // Clear and add to preview
   previewCanvas.innerHTML = '';
   previewCanvas.appendChild(clone);
+
+  // Apply fit-to-zoom scaling
+  fitPreviewToContainer(clone, previewCanvas);
+}
+
+// Fit preview canvas to container with proper scaling
+function fitPreviewToContainer(clonedCanvas, container) {
+  // Get the preview content area dimensions
+  const previewContent = container.parentElement;
+  const contentRect = previewContent.getBoundingClientRect();
+
+  // Get canvas dimensions
+  const canvasWidth = clonedCanvas.offsetWidth;
+  const canvasHeight = clonedCanvas.offsetHeight;
+
+  // Calculate available space (with padding)
+  const padding = 40; // 40px padding on each side
+  const availableWidth = contentRect.width - (padding * 2);
+  const availableHeight = contentRect.height - (padding * 2);
+
+  // Calculate scale to fit
+  const scaleX = availableWidth / canvasWidth;
+  const scaleY = availableHeight / canvasHeight;
+  const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
+
+  // Apply transform
+  clonedCanvas.style.transform = `scale(${scale})`;
+  clonedCanvas.style.transformOrigin = 'center center';
 }
 
 function previousRecord() {
