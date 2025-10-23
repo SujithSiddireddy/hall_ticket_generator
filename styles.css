@@ -718,7 +718,8 @@ body{
 }
 
 .preview-canvas-container{
-  box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:0 4px 16px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.08);
+  border:1px solid rgba(0, 0, 0, 0.15);
   border-radius:8px;
   overflow:hidden;
   background:white;
@@ -732,6 +733,7 @@ body{
 .preview-canvas-container .canvas-container{
   transform-origin:center center;
   border:none;
+  box-shadow:none;
 }
 
 .preview-footer{
@@ -1474,13 +1476,13 @@ input[type="file"]::file-selector-button{
 /* Canvas */
 .canvas-container{
   position:relative;
-  border:1px solid var(--border);
+  border:1px solid rgba(0, 0, 0, 0.15);
   border-radius:8px;
   width:800px; /* Default: Grid-friendly ~Half A4 (40 cells × 20px grid) */
   height:560px; /* Default: Grid-friendly ~Half A4 (28 cells × 20px grid) */
-  background:var(--surface);
+  background:white;
   overflow:hidden;
-  box-shadow:var(--shadow-lg);
+  box-shadow:0 4px 16px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.08);
   transition:width 0.3s ease, height 0.3s ease; /* Smooth resize animation */
 }
 
