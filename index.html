@@ -107,15 +107,9 @@
           <span class="label-text">Upload Data File</span>
           <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" />
         </label>
-        <select id="fieldSelector" aria-label="Field selector" disabled>
-          <option value="">Select field...</option>
+        <select id="fieldSelector" aria-label="Field selector" onchange="handleFieldSelection()" disabled>
+          <option value="">Add field...</option>
         </select>
-        <button onclick="addField()" class="btn-secondary" title="Add Field">
-          <span class="btn-icon">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
-          </span>
-          <span>Add Field</span>
-        </button>
       </div>
     </div>
 

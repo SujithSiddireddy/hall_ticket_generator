@@ -69,6 +69,14 @@ function populateFieldSelector() {
     selector.disabled = true;
   } else {
     selector.disabled = false;
+
+    // Add default option
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "Add field...";
+    selector.appendChild(defaultOption);
+
+    // Add field options
     csvHeaders.forEach(header => {
       const option = document.createElement("option");
       option.value = header;
@@ -102,5 +110,53 @@ function populateFieldSelector() {
       });
     }
   }
+}
+
+// Handle field selection - add field and reset dropdown
+function handleFieldSelection() {
+  const selector = document.getElementById("fieldSelector");
+  const selectedField = selector.value;
+
+  // Only add if a valid field is selected (not the default option)
+  if (selectedField) {
+    addFieldByName(selectedField);
+    // Reset dropdown to default option
+    selector.value = "";
+  }
+}
+
+// Add field by name (extracted from addField for reusability)
+function addFieldByName(fieldName) {
+  const div = document.createElement("div");
+  div.className = "field";
+  div.dataset.type = "field";
+  div.dataset.field = fieldName;
+  div.textContent = `{{${fieldName}}}`;
+  makeDraggable(div);
+  addLockButton(div);
+
+  // Use center of canvas if mouseX/mouseY are not set or are 0
+  const canvasWidth = canvas.offsetWidth;
+  const canvasHeight = canvas.offsetHeight;
+  const defaultX = canvasWidth / 2;
+  const defaultY = canvasHeight / 2;
+
+  // Temporarily position off-screen to measure
+  div.style.left = "-9999px";
+  div.style.top = "-9999px";
+  canvas.appendChild(div);
+
+  // Get height to center vertically
+  const height = div.offsetHeight;
+
+  // Position with left-center at mouse position or canvas center
+  const posX = (mouseX && mouseX > 0) ? mouseX : defaultX;
+  const posY = (mouseY && mouseY > 0) ? mouseY : defaultY;
+
+  div.style.left = snapValue(posX) + "px";
+  div.style.top = snapValue(posY - height / 2) + "px";
+
+  updateZIndexes();
+  selectElement(div);
 }
 

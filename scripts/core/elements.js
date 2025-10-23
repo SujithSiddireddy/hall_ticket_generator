@@ -1,31 +1,12 @@
 // Element Creation Functions
 // Extracted from script.js lines 917-1238
 
-// Add field function
+// Add field function (legacy - now handled by handleFieldSelection in csv-handler.js)
 function addField() {
   const field = document.getElementById("fieldSelector").value;
-  const div = document.createElement("div");
-  div.className = "field";
-  div.dataset.type = "field";
-  div.dataset.field = field;
-  div.textContent = `{{${field}}}`;
-  makeDraggable(div);
-  addLockButton(div);
-
-  // Temporarily position off-screen to measure
-  div.style.left = "-9999px";
-  div.style.top = "-9999px";
-  canvas.appendChild(div);
-
-  // Get height to center vertically
-  const height = div.offsetHeight;
-
-  // Position with left-center at mouse position
-  div.style.left = snapValue(mouseX || 50) + "px";
-  div.style.top = snapValue((mouseY || 50) - height / 2) + "px";
-
-  updateZIndexes();
-  selectElement(div);
+  if (field && typeof addFieldByName === 'function') {
+    addFieldByName(field);
+  }
 }
 
 // Add rectangle function
